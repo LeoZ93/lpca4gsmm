@@ -1,6 +1,6 @@
 # Differential logistic PCA for large-scale comparison of GSMMs and pathway analysis
 
-Leopold Zehetner, Diana Szeliova, Barbara Kraus, Juan A. Hernandez Bort, and JÜrgen Zanghellini
+Leopold Zehetner, Diana Szeliova, Barbara Kraus, Juan A. Hernandez Bort, and Jürgen Zanghellini
 
 ## Abstract
 Genome-scale metabolic models (gsmms) provide a platform for metabolic analyses at the systems level by mathematically depicting biochemical reactions. Recent advances led to a large amount of gsmms for different species or tissue-specific reconstructions from global gsmms. Currently, the comparison of gsmms mostly depends on methods like dimension reduction algorithms, distance matrices, or predefined environmental conditions. However, these approaches are either hard to interpret or rely on subjective assumptions.
@@ -8,5 +8,6 @@ Here we introduce a novel use of logistic principal component analysis (lpca) to
 
 ## Data and Code
 
-The scripts folder contains all scripts for data processing and to reconstruct results from the paper.
-  1) 
+The scripts folder contains all scripts for data processing and to reconstruct results from the paper.  
+1) 
+
