@@ -1,29 +1,33 @@
 ## Performing logpca on binary matrices from GSMMs
 
-library(logisticPCA) # for logistic PCA ans logistic SVD
+library(logisticPCA)
 library(readr)
 library(rARPACK)
 library(readxl)
+library(ellipse)
 
 ###############################
 ##### PanGSMM Escherichia #####
 ###############################
 
+# import datasets, obtained from Monk, 2022
 escherichia <- read_excel("data/logPCA/rstb20210236_si_002.xlsx", sheet = "Reaction Info") # file obtained from Monk, 2022, 
 clades <- read_excel("data/logPCA/rstb20210236_si_002.xlsx", sheet = "Model reaction counts")
 
 # data cleaning and preparation
 escherichia <- escherichia[, -c(2:5)]
-
 escherichia[is.na(escherichia)] <- 0.0
 
+# remove all reactions, that are present in either all models or in none or them
 escherichia <- escherichia[!(apply(escherichia[,3:224], 1, function(row) all(row == 1) | all(row == 0))), ]
 
+# extract differential reactions and corresponding subsystems
 differential.rxns <- escherichia$...1
 subsystems <- escherichia$Subsystem
 
 escherichia <- escherichia[, -c(1,2)]
 
+# prepare labeling for each clade
 matching_cols <- match(colnames(escherichia), clades$strain_id)
 
 unique_groups <- unique(clades$Species)
@@ -48,8 +52,10 @@ Clade.IV <- index_lists[[11]]
 Clade.VI <- index_lists[[12]]
 Clade.VII <- index_lists[[13]]
 
+# extract clades for creating ellipses later
 rem.clades.cluster <- c(index_lists[[2]], index_lists[[3]], index_lists[[4]], index_lists[[5]], index_lists[[6]], index_lists[[8]], index_lists[[9]], index_lists[[11]], index_lists[[12]], index_lists[[13]])
 
+# assign labels to each clade
 escherichia_t <- t(escherichia)
 
 class.labels = vector()
@@ -69,7 +75,7 @@ class.labels[c(Clade.VII)] = "#9bdeef" #
 # Running logpca on differential reactions
 K = 1
 
-## logistic PCA model
+## logistic PCA model with one PC
 logpca.model = logisticPCA(escherichia_t, # binary data
                            k=K, # number of PCs
                            m=0, # approximation of natural parameter
@@ -80,25 +86,28 @@ PC1 <- logpca.model$prop_deviance_expl
 
 K = 2
 
-## logistic PCA model
+## logistic PCA model with two PC
 logpca.model = logisticPCA(escherichia_t, # binary data
                            k=K, # number of PCs
                            m=0, # approximation of natural parameter
                            main_effects = TRUE,
                            partial_decomp = TRUE) # including offset term
 
+# store model as escherichia.model
 escherichia.model <- logpca.model
 
 PC2 <- escherichia.model$prop_deviance_expl - PC1
 
-# analyzing results from logpca
+# analyzing results from logpca. Extract scores and loadings
 logpca.scores = escherichia.model$PCs # extract score matrix
 logpca.loadings = escherichia.model$U # extract loading matrix
 
+# assign subsystems to the corresponding reaction
 x <- as.data.frame(logpca.loadings)
 x$rxns <- differential.rxns
 x$subsystems <- subsystems
 
+# calculate arithmetic mean values per subsystem for PC1 and PC2 per subsystem
 loading_results <- x %>%
   group_by(subsystems) %>%
   summarize(
@@ -106,6 +115,7 @@ loading_results <- x %>%
     loading_2 = mean(V2)
   )
 
+# calculate length of each subsystem-specific loading vector
 loading_results$length <- sqrt(loading_results$loading_1^2 + loading_results$loading_2^2)
 
 # Sort the dataframe by 'length' in descending order
@@ -114,6 +124,7 @@ sorted_result <- loading_results %>% arrange(desc(length))
 # Take the top 10 longest vectors
 top_longest_vectors <- head(sorted_result, 5)
 
+# otain ellipses in logpca plot
 rem.cluster_ellipse <- ellipse(cov(logpca.scores[rem.clades.cluster,]), center=colMeans(logpca.scores[rem.clades.cluster,]))
 ealbertii_ellipse <- ellipse(cov(logpca.scores[E.albertii,]), center=colMeans(logpca.scores[E.albertii,]))
 efergusonii_ellipse <- ellipse(cov(logpca.scores[E.fergusonii,]), center=colMeans(logpca.scores[E.fergusonii,]))
@@ -168,18 +179,21 @@ lines(ealbertii_ellipse, col="#127db9", lwd=2)
 lines(efergusonii_ellipse, col="#e46864", lwd=2)
 
 
-#### different approach of calculating loadings: first take length of vectors, then mean by subsystem
-#### Cave: visualization is not possible
+#### Alternative approach of calculating subsystem specific loadings: first calculate lenght of every reaction-specific loading, followed by averaging per subsystem
 
+# extract scores and loadings from lpca results
 logpca.scores = escherichia.model$PCs # extract score matrix
 logpca.loadings = escherichia.model$U # extract loading matrix
 
+# assign subsystem and reactions to loadings
 x <- as.data.frame(logpca.loadings)
 x$rxns <- differential.rxns
 x$subsystems <- subsystems
 
+# calculate length for each loading
 x$length <- sqrt(x$V1^2 + x$V2^2)
 
+# calculate mean per subsystem
 loading_results <- x %>%
   group_by(subsystems) %>%
   summarize(
@@ -191,60 +205,56 @@ sorted_result <- loading_results %>% arrange(desc(loading))
 # Take the top 10 longest vectors
 top_longest_vectors.2 <- head(sorted_result, 5)
 
-# top_longest_vectors and top_longest_vectors.2 correspond to system-loadings 1 and system-loadings 2 in table 1 of the paper
+
+#### Extract loadings for reactions from "Histidine metabolism" before Cholesterol degradation invention
+
+selected_rxns <- x %>%
+  filter(subsystems == "Histidine Metabolism")
 
 
-###############################
-### Cancer and Tissue cells ###
-###############################
 
-subsystems <- read_csv("/home/users/lzehetner/data/logPCA/subsystems.csv", col_names = TRUE)
-subsystems <- subsystems[, -c(1)]
+#### Reassign reactions and create a new subsystem "Cholesterole degradation"
 
-spec_rxns <- read_csv("/home/users/lzehetner/data/logPCA/differential_rxns_tissue_and_cancer.csv", col_names = TRUE)
-
-spec_cell_rxns <- spec_rxns[, -c(1,2)]
-
-# to remove Adrenocortical cancer, since it clusters far away
-# spec_cell_rxns <- spec_cell_rxns[, -c(51)]
-
-
-spec_cell_rxns_t <- t(spec_cell_rxns)
-
-class.labels = vector()
-class.labels[c(1:50)] = "#0000FF" # Normal tissue
-class.labels[c(51:80)] = "#FF0000" # Cancer
-
-K = 1
-
-## logistic PCA model
-logpca.model = logisticPCA(spec_cell_rxns_t, # binary data
-                           k=K, # number of PCs
-                           m=0, # approximation of natural parameter
-                           main_effects = TRUE,
-                           partial_decomp = TRUE) # including offset term
-
-PC1 <- logpca.model$prop_deviance_expl
-
-K = 2
-
-## logistic PCA model
-logpca.model = logisticPCA(spec_cell_rxns_t, # binary data
-                           k=K, # number of PCs
-                           m=0, # approximation of natural parameter
-                           main_effects = TRUE,
-                           partial_decomp = TRUE) # including offset term
-# here PC1 <- 0.3586717 - PC2
-PC2 <- logpca.model$prop_deviance_expl - PC1
-
-cancer.vs.tissue.model <- logpca.model
-
-logpca.scores = cancer.vs.tissue.model$PCs # extract score matrix
-logpca.loadings = cancer.vs.tissue.model$U # extract loading matrix
+logpca.scores = escherichia.model$PCs # extract score matrix
+logpca.loadings = escherichia.model$U # extract loading matrix
 
 x <- as.data.frame(logpca.loadings)
-x$rxns <- spec_rxns$Reaction
-x <- merge(x, subsystems, by = "rxns", all.x = TRUE)
+x$rxns <- differential.rxns
+x$subsystems <- subsystems
+
+# add new subsystem cholesterol degradation
+chol_degr <- c("CHOL1",
+               "CYP1",
+               "CYP2",
+               "CYP3",
+               "FADD17",
+               "FADE281",
+               "ECHA191",
+               "FADB2",
+               "FADE51",
+               "CHOLCOA",
+               "ECHA192",
+               "FADB3",
+               "FADE52",
+               "FADE282",
+               "ECHA193",
+               "PRCOA1",
+               "KSTD",
+               "KSH",
+               "3HSA",
+               "HSA",
+               "HSAC",
+               "HDAD",
+               "FADD3",
+               "HIPB",
+               "FADE30",
+               "ECHA20",
+               "CHCD",
+               "HIAA",
+               "HIAt"
+)
+
+x$subsystems[x$rxns %in% chol_degr] <- "Cholesterol degradation"
 
 loading_results <- x %>%
   group_by(subsystems) %>%
@@ -260,8 +270,197 @@ sorted_result <- loading_results %>% arrange(desc(length))
 
 # Take the top 10 longest vectors
 top_longest_vectors <- head(sorted_result, 5)
+
+rem.cluster_ellipse <- ellipse(cov(logpca.scores[rem.clades.cluster,]), center=colMeans(logpca.scores[rem.clades.cluster,]))
+ealbertii_ellipse <- ellipse(cov(logpca.scores[E.albertii,]), center=colMeans(logpca.scores[E.albertii,]))
+efergusonii_ellipse <- ellipse(cov(logpca.scores[E.fergusonii,]), center=colMeans(logpca.scores[E.fergusonii,]))
+
+plot(logpca.scores,  # x and y data
+     pch=21,           # point shape
+     col=class.labels, # 
+     bg=class.labels,  #
+     cex=1,          # point size
+     main="",     # title of plot
+     xlab = "PC1 (19%)", # 
+     ylab = "PC2 (15%)", #
+     cex.axis = 1.3,
+     cex.lab = 1.3
+)
+
+arrows(x0 = rep(0, nrow(top_longest_vectors)), 
+       y0 = rep(0, nrow(top_longest_vectors)), 
+       x1 = top_longest_vectors$loading_1*2000, 
+       y1 = top_longest_vectors$loading_2*2000, 
+       col = "black", # You can change the color
+       angle = 25, # Angle of the arrow head
+       length = 0.1) # Length of the arrow head
+
+for(i in 1:nrow(top_longest_vectors)) {
+  if (top_longest_vectors$loading_1[i] < 0) {
+    text(x = top_longest_vectors$loading_1[i]*1000, 
+         y = top_longest_vectors$loading_2[i]*2500, 
+         labels = top_longest_vectors$subsystems[i],
+         pos = 2,  # Places the text above the point
+         col = "black",  # Text color
+         cex = 1.3  # Text size
+    )
+  }
+  if (top_longest_vectors$loading_1[i] > 0) {
+    text(x = top_longest_vectors$loading_1[i]*2500, 
+         y = top_longest_vectors$loading_2[i]*2500, 
+         labels = top_longest_vectors$subsystems[i],
+         pos = 4,  # Places the text above the point
+         col = "black",  # Text color
+         cex = 1.3  # Text size
+    )
+  }
+}
+
+
+#colors <- c("#fd7d08", "#e46864", "#127db9","#feb166","#ffe4ca","#c5aedb","#2c9f28","#90e585","#abcaff","#feb0d2","#9bdeef", "#915347")
+#legend("bottomleft", legend = c("E.coli", "E.fergusonii", "E.albertii", "S.dysenteriae", "S.flexneri", "Clade II", "Clade III", "Clade IV", "Clade V", "Clade VI", "Clade VII", "Clade VIII"), fill=colors, cex=0.8)
+
+lines(rem.cluster_ellipse, col="#fd7d08", lwd=2)
+lines(ealbertii_ellipse, col="#127db9", lwd=2)
+lines(efergusonii_ellipse, col="#e46864", lwd=2)
+
+#### Alternative calculation after reassigning reactions to Cholesterol degradation subsystem
+
+logpca.scores = escherichia.model$PCs # extract score matrix
+logpca.loadings = escherichia.model$U # extract loading matrix
+
+x <- as.data.frame(logpca.loadings)
+x$rxns <- differential.rxns
+x$subsystems <- subsystems
+
+x$length <- sqrt(x$V1^2 + x$V2^2)
+
+chol_degr <- c("CHOL1",
+               "CYP1",
+               "CYP2",
+               "CYP3",
+               "FADD17",
+               "FADE281",
+               "ECHA191",
+               "FADB2",
+               "FADE51",
+               "CHOLCOA",
+               "ECHA192",
+               "FADB3",
+               "FADE52",
+               "FADE282",
+               "ECHA193",
+               "PRCOA1",
+               "KSTD",
+               "KSH",
+               "3HSA",
+               "HSA",
+               "HSAC",
+               "HDAD",
+               "FADD3",
+               "HIPB",
+               "FADE30",
+               "ECHA20",
+               "CHCD",
+               "HIAA",
+               "HIAt"
+)
+
+x$subsystems[x$rxns %in% chol_degr] <- "Cholesterol degradation"
+
+loading_results <- x %>%
+  group_by(subsystems) %>%
+  summarize(
+    loading = mean(length)
+  )
+
+sorted_result <- loading_results %>% arrange(desc(loading))
+
+# Take the top 10 longest vectors
+top_longest_vectors.2 <- head(sorted_result, 5)
+
+
+#### Extract loadings for reactions from "Histidine metabolism" after Cholesterol degradation invention
+
+selected_rxns <- x %>%
+  filter(subsystems == "Histidine Metabolism")
+
+
+
+###############################
+### Cancer and Tissue cells ###
+###############################
+
+# import subsystems file from human1
+subsystems <- read_csv("/home/users/lzehetner/data/logPCA/subsystems.csv", col_names = TRUE)
+subsystems <- subsystems[, -c(1)]
+
+# import differential reaction file for tissue and cancer specific gsmms
+spec_rxns <- read_csv("/home/users/lzehetner/data/logPCA/differential_rxns_tissue_and_cancer.csv", col_names = TRUE)
+
+spec_cell_rxns <- spec_rxns[, -c(1,2)]
+spec_cell_rxns_t <- t(spec_cell_rxns)
+
+# assign labels to healthy and cancer tissues
+class.labels = vector()
+class.labels[c(1:50)] = "#0000FF" # Normal tissue
+class.labels[c(51:80)] = "#FF0000" # Cancer
+
+# perform lpca for PC1
+K = 1
+
+## logistic PCA model
+logpca.model = logisticPCA(spec_cell_rxns_t, # binary data
+                           k=K, # number of PCs
+                           m=0, # approximation of natural parameter
+                           main_effects = TRUE,
+                           partial_decomp = TRUE) # including offset term
+
+PC1 <- logpca.model$prop_deviance_expl
+
+# perform lpca for PC2
+K = 2
+
+## logistic PCA model
+logpca.model = logisticPCA(spec_cell_rxns_t, # binary data
+                           k=K, # number of PCs
+                           m=0, # approximation of natural parameter
+                           main_effects = TRUE,
+                           partial_decomp = TRUE) # including offset term
+
+PC2 <- logpca.model$prop_deviance_expl - PC1
+
+# store model
+cancer.vs.tissue.model <- logpca.model
+
+# extract loadings and scores
+logpca.scores = cancer.vs.tissue.model$PCs # extract score matrix
+logpca.loadings = cancer.vs.tissue.model$U # extract loading matrix
+
+# assign reactions and subsystems
+x <- as.data.frame(logpca.loadings)
+x$rxns <- spec_rxns$Reaction
+x <- merge(x, subsystems, by = "rxns", all.x = TRUE)
+
+# calculate average loadings per subsystem
+loading_results <- x %>%
+  group_by(subsystems) %>%
+  summarize(
+    loading_1 = mean(V1),
+    loading_2 = mean(V2)
+  )
+
+# calculate lenght of subsystem-specific loading vectores
+loading_results$length <- sqrt(loading_results$loading_1^2 + loading_results$loading_2^2)
+
+# Sort the dataframe by 'length' in descending order
+sorted_result <- loading_results %>% arrange(desc(length))
+
+# Take the top 5 longest vectors
+top_longest_vectors <- head(sorted_result, 5)
 #top_longest_vectors <- top_longest_vectors[c(3:6),]
 
+# plot the obtained scores and 5 most important loadings
 plot(logpca.scores,  # x and y data
      pch=21,           # point shape
      col=class.labels, # 
@@ -306,7 +505,7 @@ for(i in 1:nrow(top_longest_vectors)) {
 colors <- c("#0000FF", "#FF0000")
 legend("bottomright", legend=c("Normal Tissue", "Cancer"), fill=colors, cex=1)
 
-
+# extract subsystem Linoleate meabolism for analysis
 selected_rxns <- x %>%
   filter(subsystems == "Linoleate metabolism")
 
@@ -316,15 +515,16 @@ selected_rxns <- x %>%
 ############# Fungi ###############
 ###################################
 
+# import differential reactions dataframe
 fungi_df <- read_csv("/home/users/lzehetner/data/logPCA/differential_rxns_per_fungus.csv", col_names = TRUE)
 
+# prepare dataframe
 fungi <- fungi_df[, -c(1,2,3)]
-
-# spec_cell_rxns <- spec_cell_rxns[, -c(21,69)]
 
 fungi_t <- t(fungi)
 
-## fungi classes ##
+
+# assign species to clades and add labels
 alloascoideaceae = c('Alloascoidea_hylecoeti')
 ascomycota = c('Arthrobotrys_oligospora', 'Aspergillus_nidulans', 'Botrytis_cinerea', 'Coccidioides_immitis', 'Fusarium_graminearum', 'Neurospora_crassa', 'Saitoella_complicata', 'Schizosaccharomyces_pombe', 'Sclerotinia_sclerotiorum', 'Stagonospora_nodorum', 'Xylona_heveae')
 cug_ala = c('Nakazawaea_holstii', 'Nakazawaea_peltata', 'Pachysolen_tannophilus', 'Peterozyma_toletana', 'Peterozyma_xylosa')
@@ -369,6 +569,7 @@ class.labels[c(index_12)] = "#58539e" # sporopachydermia
 class.labels[c(index_13)] = "#f5348f" # trigonopsidaceae
 
 
+# perform lpca on binary data using 1 PC
 K = 1
 
 ## logistic PCA model
@@ -380,6 +581,7 @@ logpca.model = logisticPCA(fungi_t, # binary data
 
 fungi.K1 <- logpca.model
 
+# perform lpca on binary data using 2 PC
 K = 2
 
 ## logistic PCA model
@@ -389,16 +591,19 @@ logpca.model = logisticPCA(fungi_t, # binary data
                            main_effects = TRUE,
                            partial_decomp = TRUE) # including offset term
 
+# store model
 fungi.K2 <- logpca.model
 
+# extract scores and loadings
 logpca.scores = fungi.K2$PCs # extract score matrix
 logpca.loadings = fungi.K2$U # extract loading matrix
 
+# assign reactions and subsystems to loadings
 x <- as.data.frame(logpca.loadings)
 x$rxns <- fungi_df$rxns
 x$subsystems <- substring(fungi_df$subsystems, 11)
 
-
+# calculate means of loadings for each subsystem
 loading_results <- x %>%
   group_by(subsystems) %>%
   summarize(
@@ -406,20 +611,18 @@ loading_results <- x %>%
     loading_2 = mean(V2)
   )
 
+# calculate length of each subsystem specific loading vector
 loading_results$length <- sqrt(loading_results$loading_1^2 + loading_results$loading_2^2)
 
 # Sort the dataframe by 'length' in descending order
 sorted_result <- loading_results %>% arrange(desc(length))
 
-# Take the top 10 longest vectors
+# Take the top 5 longest vectors
 top_longest_vectors <- head(sorted_result, 5)
 #top_longest_vectors$subsystems <- substring(top_longest_vectors$subsystems, 9)
 
-# y <- x[x$V1 < -0.02, ]
 
-#png(file="/home/users/lzehetner/data/logPCA/logpca_spec_cells_test.png",
-#    width=1059, height=660)
-
+# create plot
 plot(logpca.scores,  # x and y data
      pch=21,           # point shape
      col=class.labels, # 
