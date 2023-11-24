@@ -4,11 +4,12 @@ library(readr)
 library(Rtsne)
 library(plotly)
 
-
+# import dataset containing pan-reactions for fungi
 df_1 <- read_csv("data/logPCA/extracted_rxns_per_fungus.csv")
 
 df_1 <- df_1[, -c(1:3)]
 
+# assign species to clades and label them
 alloascoideaceae = c('Alloascoidea_hylecoeti')
 outgrouped = c('Arthrobotrys_oligospora', 'Aspergillus_nidulans', 'Botrytis_cinerea', 'Coccidioides_immitis', 'Fusarium_graminearum', 'Neurospora_crassa', 'Saitoella_complicata', 'Schizosaccharomyces_pombe', 'Sclerotinia_sclerotiorum', 'Stagonospora_nodorum', 'Xylona_heveae')
 cug_ala = c('Nakazawaea_holstii', 'Nakazawaea_peltata', 'Pachysolen_tannophilus', 'Peterozyma_toletana', 'Peterozyma_xylosa')
@@ -54,6 +55,7 @@ class.labels[c(index_13)] = "#f5348f" # trigonopsidaceae
 
 df_1 <- t(df_1)
 
+# perform tsne analysis with 3 dimensions
 tsne <- Rtsne(df_1, dims = 3, distance = 'hamming', check_duplicates = FALSE)
 
 tsne_data <- as.data.frame(tsne$Y)
@@ -72,9 +74,30 @@ plot_ly(tsne_data, x = ~tSNE1, y = ~tSNE2, z = ~tSNE3, type = 'scatter3d', mode 
                       yaxis = list(title = 'tSNE2'),
                       zaxis = list(title = 'tSNE3')))
 
-color_names <- setNames(c("Alloascoideaceae", "CUG_Ala", "CUG_Ser1", "CUG_Ser2", "Dipodascaceae", "Lipomycetaceae", "Outgrouped", "Phaffomycetaceae", "Pichiaceae", "Saccharomycetaceae", "Saccharomycodaceae", "Sporopachydermia", "Trigonopsidaceae"), 
-                        c("#559668", "#000000", "#633717", "#fac34e", "#a7cd57", "#f83e32", "#942d8c", "#2cc5da", "#fc803e", "#0a5aa2", "#04988d", "#58539e", "#f5348f"))
+### Create 2D tsne plot
 
-tsne_data$color <- color_names[tsne_data$color]
+tsne <- Rtsne(df_1, dims = 2, distance = 'hamming', check_duplicates = FALSE)
 
-plot_ly(data = tsne_data, x = ~tSNE1, y = ~tSNE2, z = ~tSNE3, type = 'scatter3d', mode = 'markers', color = ~color, size = 1)
+tsne_data <- as.data.frame(tsne$Y)
+colnames(tsne_data) <- c('tSNE1', 'tSNE2')
+
+
+tsne_data$color <- class.labels
+
+
+# Ensure the 'color' column is a factor and map it correctly in the plot
+#tsne_data$color <- as.factor(tsne_data$color)
+
+plot(tsne_data$tSNE1,
+     tsne_data$tSNE2,
+     pch=19,           # point shape
+     col=class.labels, # 
+     bg=class.labels,  #
+     cex=1,          # point size
+     main="",     # title of plot
+     xlab = "tSNE1", # 
+     ylab = "tSNE2", # 
+     cex.axis = 1.4,
+     cex.lab = 1.4
+)
+
