@@ -9,4 +9,4 @@ Here we introduce a novel use of logistic principal component analysis (lpca) to
 ## Data and Code
 
 The scripts folder contains all scripts for data processing and to reconstruct results from the paper.
-1) 
+  1) 
