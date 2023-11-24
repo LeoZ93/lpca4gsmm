@@ -11,10 +11,13 @@ library(ape)
 
 ## Whole genome based phylogeny
 
+# import phylogenetic tree obtained from orthofinder
 tree <- read.tree("/home/users/lzehetner/data/prodigal/proteomes/OrthoFinder/Results_Nov14/Species_Tree/SpeciesTree_rooted.txt")
 
+# import dataset from Monk, 2022
 data <- read_excel("data/rstb20210236_si_003.xlsx", sheet = "growth predictions")
 
+# remove last row, containing a reference gsmm, not included in the genomes
 data <- data[-223,]
 
 # Split the data into a list by species
@@ -22,11 +25,8 @@ split_data <- split(data$strain_id, data$Species)
 
 # Convert list elements to vectors and name them
 species_vectors <- lapply(split_data, as.vector)
-#names(species_vectors) <- unique(data$Species)
 
-# Print the vectors
-# print(species_vectors)
-
+# assign labels to clades
 e.coli <- species_vectors[["Escherichia coli"]]
 e.albertii <- species_vectors[["Escherichia albertii"]]
 e.fergusonii <- species_vectors[["Escherichia fergusonii"]]
@@ -70,6 +70,7 @@ colors <- c("#fd7d08",
             "#915347"
 )
 
+# assign edge colors of phylogenetic tree to clades
 assign_edge_colors <- function(tree, groups, colors) {
   edge_colors <- rep("grey", length(tree$edge[,1])) # Default color for edges
   for (i in seq_along(groups)) {
@@ -87,7 +88,7 @@ assign_edge_colors <- function(tree, groups, colors) {
 
 edge_colors <- assign_edge_colors(tree, groups, colors)
 
-
+# create phylogenetic tree
 plot.phylo(tree, type = "phylogram", show.tip.label = FALSE, edge.color = edge_colors)
 
 legend_labels <- c("E. coli", "E. albertii", "E. fergusonii", 
@@ -108,8 +109,10 @@ legend("topright", # position of the legend
 #### Fungi ####
 ###############
 
+# import phylogenetic tree from Shen, 2018
 tree <- read.tree("/home/users/lzehetner/data/logPCA/332_2408OGs_time-calibrated_phylogeny_species-names_updated.newick")
 
+# assign species to clades
 alloascoideaceae = c('Alloascoidea_hylecoeti')
 outgrouped = c('Arthrobotrys_oligospora', 'Aspergillus_nidulans', 'Botrytis_cinerea', 'Coccidioides_immitis', 'Fusarium_graminearum', 'Neurospora_crassa', 'Saitoella_complicata', 'Schizosaccharomyces_pombe', 'Sclerotinia_sclerotiorum', 'Stagonospora_nodorum', 'Xylona_heveae')
 cug_ala = c('Nakazawaea_holstii', 'Nakazawaea_peltata', 'Pachysolen_tannophilus', 'Peterozyma_toletana', 'Peterozyma_xylosa')
@@ -124,10 +127,8 @@ saccharomycodaceae = c('Hanseniaspora_clermontiae', 'Hanseniaspora_osmophila', '
 sporopachydermia = c('Sporopachydermia_lactativora', 'Sporopachydermia_quercuum')
 trigonopsidaceae = c('Botryozyma_nematodophila', 'Tortispora_caseinolytica', 'Tortispora_ganteri', 'Tortispora_starmeri', 'Trigonopsis_variabilis', 'Trigonopsis_vinaria')
 
-
+# assign colors to edges in tree
 groups <- list(alloascoideaceae, outgrouped, cug_ala, cug_ser1, cug_ser2, dipodascaceae, lipomycetaceae, phaffomycetaceae, pichiaceae, saccharomycetaceae, saccharomycodaceae, sporopachydermia, trigonopsidaceae)
-
-#groups <- list(ascomycota) # Add more groups as necessary
 colors <- c("#559668", "#000000", "#633717", "#fac34e", "#a7cd57", "#f83e32", "#942d8c", "#2cc5da", "#fc803e", "#0a5aa2", "#04988d", "#58539e", "#f5348f") # Add more colors corresponding to your groups
 
 assign_edge_colors <- function(tree, groups, colors) {
@@ -147,6 +148,7 @@ assign_edge_colors <- function(tree, groups, colors) {
 
 edge_colors <- assign_edge_colors(tree, groups, colors)
 
+# create the phylogenetic tree
 plot(tree, edge.color = edge_colors, show.tip.label = FALSE)
 
 legend("bottomleft", legend=c("Alloascoideaceae", "Outgrouped", "Cug_Ala", "Cug_Ser1", "Cug_Ser2", "Dipodascaceae", "Lipomycetaceae", "Phaffomycetaceae", "Pichiaceae", "Saccharomycetaceae", "Saccharomycodaceae", "Sporopachydermia", "Trigonopsidaceae"), fill=colors, cex=0.8)
