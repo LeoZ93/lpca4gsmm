@@ -10,15 +10,15 @@ Here we introduce a novel use of logistic principal component analysis (lpca) to
 
 The scripts folder contains all scripts for data processing and to reconstruct results from the paper.  
 1) extraction_cancer_healthy_tissue.ipynb: jupyter notebook to extract reactions and genes specific to transcriptomic datasets of cancer and healthy tissues from the Human Protein Atlas [1]
-2) logpca.R: logistic pca performed on three different datasets, including 222 Escherichia-specific gsmms [2], 343 yeast-specific gsmms [3], and 80 healthy and cancer tissue specific reaction sets.
-3) pca.R: pca performed on transcriptomic data from healthy and cancer tissues [1], as well as simulated growth rates from 222 Escherichia-specific gsmms [2]
-4) phylogeny.R: phylogenetic tree for 222 Escherichia strains, based on their genomes, downloaded from Enterobase [4] and phylogenetic tree reconstruction based on 332 sequenced yeast genomes [5].
-5) reaction_extraction_yeast.ipynb: extraction of pan-reactions from yeast-specific gsmms [3]
-6) subsystem_extraction_human1.ipynb: assignment of subsystems to reactions, extracted from human1 gsmm [6]
-7) tsne.R: reconstruction of tsne analysis based on yeast-specific gsmms [3].
+2) escherichia.R: script containing all analyses based on the Escherichia dataset, derived from Monk [2]
+3) fungi.R: script containing all analyses based on the Fungi dataset, derived from Lu [3] and Shen [5]
+4) tissues.R: script containing all analyses based on the Tissue reconstructions, generated from gene expression data from [1]
+5) firmicutes.R: script containing all analyses based on the Firmicutes subphylum, derived from the Agora2 dataset [8]
+6) reaction_extraction_yeast.ipynb: extraction of pan-reactions from yeast-specific gsmms [3]
+7) subsystem_extraction_human1.ipynb: assignment of subsystems to reactions, extracted from human1 gsmm [6]
 
 Datasets newly generated for this study are stored in the data folder, which includes:  
-1) SpeciesTree_rooted.txt: newick file obtained from 222 Escherichia strains, obtained from orthofinder [7].
+1) SpeciesTree_rooted.txt: newick file obtained from 222 Escherichia strains, obtained from OrthoFinder [7].
 2) cancer_and_tissue.csv: combined transcriptomic datasets containing healthy and cancer tissues, obtained from Human Protein Atlas [1]
 3) differential_genes_tissue_and_cancer.csv: binary matrix containing extracted genes from human1 [6] assigned to reactions from tissue-specific reaction sets.  
 4) differential_rxns_per_fungus.csv: binary matrix containing differential reactions from 343 yeast-specific gsmms [3].
@@ -26,7 +26,6 @@ Datasets newly generated for this study are stored in the data folder, which inc
 6) extracted_rxns_per_fungus.csv: binary matrix containing pan-reactions from 343 yeast-specific gsmms [3].
 7) subsystems.csv: assigned subsystems to reactions from human1 [6]
 8) gpr_human1.csv: containing gene-protein reaction rules of human1, obtained from [6]
-9) 41587_2022_1628_MOESM3_ESM.xlsx: containing phylum assignments from Agora2, obtained from [8]
 
 Additional datasets that need to be downloaded from other resources:  
 1) [human1 gsmm](https://github.com/SysBioChalmers/Human-GEM/blob/main/model/Human-GEM.xml)  
