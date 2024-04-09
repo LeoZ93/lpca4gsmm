@@ -26,6 +26,7 @@ Datasets newly generated for this study are stored in the data folder, which inc
 6) extracted_rxns_per_fungus.csv: binary matrix containing pan-reactions from 343 yeast-specific gsmms [3].
 7) subsystems.csv: assigned subsystems to reactions from human1 [6]
 8) gpr_human1.csv: containing gene-protein reaction rules of human1, obtained from [6]
+9) 41587_2022_1628_MOESM3_ESM.xlsx: containing phylum assignments from Agora2, obtained from [8]
 
 Additional datasets that need to be downloaded from other resources:  
 1) [human1 gsmm](https://github.com/SysBioChalmers/Human-GEM/blob/main/model/Human-GEM.xml)  
@@ -70,3 +71,8 @@ Science signaling 13.624 (2020): eaaz1482.
 Emms, David M., and Steven Kelly.
 OrthoFinder: phylogenetic orthology inference for comparative genomics
 Genome biology 20 (2019): 1-14.
+
+<a id="7">[8]</a> 
+Heinken, A., Hertel, J., Acharya, G., Ravcheev, D. A., Nyga, M., Okpala, O. E., ... & Thiele, I.
+Genome-scale metabolic reconstruction of 7,302 human microorganisms for personalized medicine. 
+Nature Biotechnology, 41(9), (2023), 1320-1331.
