@@ -14,6 +14,8 @@ library(Rtsne)
 library(dplyr)
 library(nnet)
 
+set.seed(42)
+
 ###############################
 ### Cancer and Tissue cells ###
 ###############################
