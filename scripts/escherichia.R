@@ -17,6 +17,8 @@ library(ellipse)
 #install.packages("nnet", quiet = TRUE)
 library(nnet)
 
+set.seed(42)
+
 ###############################
 ##### PanGEMs Escherichia #####
 ###############################
