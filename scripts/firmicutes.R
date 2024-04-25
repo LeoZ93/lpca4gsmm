@@ -11,6 +11,8 @@ library(ComplexHeatmap)
 library(Rtsne)
 library(dplyr)
 
+set.seed(42)
+
 ##################
 ### Firmicutes ###
 
