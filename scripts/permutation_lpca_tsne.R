@@ -2,6 +2,8 @@ library(Rtsne)
 library(ggplot2)
 library(dplyr)
 
+set.seed(42)
+
 ### Data ###
 
 escherichia <- read_excel("data/logPCA/rstb20210236_si_002.xlsx", sheet = "Reaction Info")
