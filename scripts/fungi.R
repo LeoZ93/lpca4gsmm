@@ -13,6 +13,8 @@ library(ape)
 library(Rtsne)
 library(dplyr)
 
+set.seed(42)
+
 
 fungi_df <- read_csv("/home/users/lzehetner/data/logPCA/differential_rxns_per_fungus.csv", col_names = TRUE)
 
