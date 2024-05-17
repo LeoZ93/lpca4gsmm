@@ -34,6 +34,7 @@ Additional datasets that need to be downloaded from other resources:
 4) [simulated growth rates of 222 Escherichia-specific gsmms](https://rs.figshare.com/articles/dataset/Supplementary_Data_File_3_from_Genome-scale_metabolic_network_reconstructions_of_diverse_i_Escherichia_i_strains_reveal_strain-specific_adaptations/20236560?backTo=/collections/Supplementary_material_from_Genome-scale_metabolic_network_reconstructions_of_diverse_i_Escherichia_i_strains_reveal_strain-specific_adaptations_/6080730)  
 5) [Phylogenetic results from 332 yeast-specific genomes](https://figshare.com/articles/dataset/Tempo_and_mode_of_genome_evolution_in_the_budding_yeast_subphylum/5854692?file=12977468)  
 6) [Yeast-specific gsmms](https://www.ebi.ac.uk/biomodels/search?query=Lu2021&domain=biomodels)
+7) [AGORA2-derived gsmms](https://www.vmh.life/files/reconstructions/AGORA2/version2.01/sbml_files/individual_reconstructions/)
 
 ## References
 <a id="1">[1]</a> 
